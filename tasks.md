@@ -1,3 +1,49 @@
+Last updated: 2026-01-28 09:22
+
+Task ID: T-1004
+Title: Transform README into a high-level application overview
+Status: DONE
+Owner: Miles
+Related repo or service: class-orb
+Created: 2026-01-28 09:22
+Last updated: 2026-01-28 09:25
+
+START LOG
+
+Timestamp: 2026-01-28 09:22
+Current behavior or state:
+- README is developer-focused with local setup instructions.
+
+Plan and scope for this task:
+- Rewrite README to provide a non-technical overview of the application.
+- Remove setup/start instructions and model configurations.
+- Focus on features, branding, and user value.
+
+WORK CHECKLIST
+
+- [x] Rewrite README to provide a non-technical overview of the application.
+- [x] Remove setup/start instructions and model configurations.
+- [x] Focus on features, branding, and user value.
+
+END LOG
+
+Timestamp: 2026-01-28 09:25
+Summary of what actually changed:
+- Transformed the `README.md` from a developer-focused setup guide into a premium application overview.
+- Highlighted the core value propositions: real-time AI translation, interactive instructor tools, and the new branded design system.
+- Removed all technical startup instructions and model configuration details as requested.
+
+Files actually modified:
+- README.md
+
+How it was tested:
+- Content review for tone and clarity.
+
+Test result:
+- PASS
+
+------------------------------------------------------------
+
 Last updated: 2026-01-28 09:18
 
 Task ID: T-1003
