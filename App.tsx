@@ -230,6 +230,20 @@ const App: React.FC = () => {
     return context.slice(context.length - maxChars);
   };
 
+  const buildTranslationContext = (items: Message[], maxItems = 6, maxChars = 800) => {
+    const finalized = items.filter(m => m.id !== 'live-stream' && m.translatedText);
+    const recent = finalized.slice(-maxItems);
+    const lines = recent.map((msg) => {
+      const original = msg.originalText?.replace(/\s+/g, ' ').trim() || '';
+      const translated = msg.translatedText?.replace(/\s+/g, ' ').trim() || '';
+      if (!original || !translated) return '';
+      return `${original} => ${translated}`.trim();
+    }).filter(Boolean);
+    const context = lines.join('\n').trim();
+    if (context.length <= maxChars) return context;
+    return context.slice(context.length - maxChars);
+  };
+
   const handleJoin = async (name: string, role: UserRole, sourceLang: string, targetLang: string, code: string, gender: string) => {
     const resolvedRoomCode = code || roomCode;
     const userId = crypto.randomUUID();
@@ -283,6 +297,7 @@ const App: React.FC = () => {
   useEffect(() => {
     return () => {
       participantsChannelRef.current?.unsubscribe();
+      messagesChannelRef.current?.unsubscribe();
       if (contextRefreshTimeoutRef.current) {
         window.clearTimeout(contextRefreshTimeoutRef.current);
       }
@@ -318,6 +333,33 @@ const App: React.FC = () => {
         }
         return [...prev, mapped];
       });
+    });
+  };
+
+  const startMessagesSync = async (roomCodeToSync: string) => {
+    messagesChannelRef.current?.unsubscribe();
+    const initialMessages = await fetchMessagesForRoom(roomCodeToSync);
+    setMessages(initialMessages.map((m) => ({
+      id: m.id,
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      originalText: m.original_text,
+      translatedText: undefined,
+      sourceLanguage: m.source_language ?? undefined,
+      timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
+    })));
+    messagesChannelRef.current = subscribeToMessages(roomCodeToSync, (payload) => {
+      if (!payload.new) return;
+      const mapped: Message = {
+        id: payload.new.id,
+        senderId: payload.new.sender_id,
+        senderName: payload.new.sender_name,
+        originalText: payload.new.original_text,
+        translatedText: undefined,
+        sourceLanguage: payload.new.source_language ?? undefined,
+        timestamp: payload.new.created_at ? new Date(payload.new.created_at).getTime() : Date.now(),
+      };
+      setMessages(prev => prev.some(m => m.id === mapped.id) ? prev : [...prev, mapped]);
     });
   };
 
