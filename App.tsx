@@ -6,8 +6,10 @@ import StudentList from './components/StudentList';
 import TranslationPanel from './components/TranslationPanel';
 import JoinScreen from './components/JoinScreen';
 import AudioVisualizer from './components/AudioVisualizer';
+import SettingsPanel from './components/SettingsPanel';
 import { Participant, UserRole, UserStatus, Message } from './types';
 import { geminiService } from './services/geminiService';
+import { openaiService } from './services/openaiService';
 import { encode } from './services/audioService';
 import {
   fetchParticipantsForRoom,
@@ -71,6 +73,10 @@ const App: React.FC = () => {
   const [joinNotification, setJoinNotification] = useState<string | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
 
+  // Settings State
+  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   // Audio state
   const [ambientVolume, setAmbientVolume] = useState(0.3);
   const [translationVolume, setTranslationVolume] = useState(1.0);
@@ -106,7 +112,7 @@ const App: React.FC = () => {
 
   const initAudioContexts = () => {
     if (!inputAudioCtxRef.current) {
-      inputAudioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      inputAudioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
     }
     if (!outputAudioCtxRef.current) {
       outputAudioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -343,7 +349,11 @@ const App: React.FC = () => {
 
   const createLiveSession = (sourceLang: string, targetLang: string) => {
     if (!user) return;
-    sessionPromiseRef.current = geminiService.connectLive(sourceLang, targetLang, {
+
+    // Choose service based on provider state
+    const service = aiProvider === 'gemini' ? geminiService : openaiService;
+
+    sessionPromiseRef.current = service.connectLive(sourceLang, targetLang, {
       onTranscription: (text, isInput) => {
         if (!isInput) return;
         liveTranscriptRef.current = `${liveTranscriptRef.current}${text}`;
@@ -382,7 +392,7 @@ const App: React.FC = () => {
         }
       },
       onError: (err) => {
-        console.error("Gemini Session error:", err);
+        console.error("Session error:", err);
         stopBroadcast();
       }
     });
@@ -394,7 +404,7 @@ const App: React.FC = () => {
       activeSession?.close?.();
       activeSession?.disconnect?.();
     } catch (err) {
-      console.warn("Unable to close Gemini session cleanly.", err);
+      console.warn("Unable to close session cleanly.", err);
     }
   };
 
@@ -415,7 +425,7 @@ const App: React.FC = () => {
       });
       setLocalStream(stream);
 
-      // Connect Gemini with dual language context
+      // Connect selected AI service with dual language context
       createLiveSession(user.sourceLang, user.targetLang);
 
       const source = inputAudioCtxRef.current.createMediaStreamSource(stream);
@@ -434,7 +444,7 @@ const App: React.FC = () => {
             activeSession.sendRealtimeInput({
               media: {
                 data: encode(new Uint8Array(int16.buffer)),
-                mimeType: 'audio/pcm;rate=16000'
+                mimeType: 'audio/pcm;rate=24000'
               }
             });
           }
@@ -569,13 +579,23 @@ const App: React.FC = () => {
     <div className="flex flex-col h-screen overflow-hidden antialiased bg-[var(--bg-app)]">
       <Header
         roomName="Wealth Management Mastery"
-        onSettingsClick={() => { }}
+        onSettingsClick={() => setIsSettingsOpen(true)}
         onExit={handleExit}
         onThemeToggle={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
         currentTheme={theme}
         joinNotification={joinNotification}
         isTranslationMuted={isTranslationMuted}
         onTranslationMuteToggle={handleToggleTranslationMute}
+      />
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        activeProvider={aiProvider}
+        onProviderChange={setAiProvider}
+        ambientVolume={ambientVolume}
+        onAmbientVolumeChange={setAmbientVolume}
+        translationVolume={translationVolume}
+        onTranslationVolumeChange={setTranslationVolume}
       />
 
       <main className="flex flex-1 overflow-hidden flex-col lg:flex-row">
