@@ -1,4 +1,61 @@
-Last updated: 2026-01-28 09:22
+Last updated: 2026-01-28 09:45
+
+Task ID: T-1006
+Title: Migrate from Supabase to Firebase RTDB
+Status: DONE
+Owner: Miles
+Related repo or service: successinvest-classroom
+Created: 2026-01-28 09:40
+Last updated: 2026-01-28 09:45
+
+START LOG
+
+Timestamp: 2026-01-28 09:40
+Current behavior or state:
+- Application uses Supabase for participant and message persistence.
+- Supabase project is currently inactive/paused.
+
+Plan and scope for this task:
+- Install Firebase SDK.
+- Create `firebaseService.ts` with provided Realtime Database configuration.
+- Migrate `App.tsx` logic from Supabase to Firebase.
+- Update `translationService.ts` to use Gemini API directly via `geminiService` instead of a Supabase Edge Function.
+- Remove legacy Supabase code and configuration.
+
+WORK CHECKLIST
+
+- [x] Install `firebase` dependency.
+- [x] Implement `services/firebaseService.ts` with RTDB listeners.
+- [x] Refactor `App.tsx` sync logic for Firebase compatibility.
+- [x] Update `services/translationService.ts` to call Gemini direct.
+- [x] Fix syntax errors in `geminiService.ts`.
+- [x] Remove unused `supabase/` directory and `services/supabaseService.ts`.
+- [x] Externalize Firebase configuration to `.env.local`.
+
+END LOG
+
+Timestamp: 2026-01-28 09:50
+Summary of what actually changed:
+- Swapped the entire persistence layer from Supabase to Firebase Realtime Database.
+- Simplified synchronization logic in `App.tsx` by using Firebase's more direct `onValue` listeners.
+- Decoupled translation from Supabase by calling the Gemini API directly through `geminiService.translateText`.
+- Verified production build and cleaned up all legacy Supabase files.
+- Moved Firebase configuration from `services/firebaseService.ts` to `.env.local` for better security.
+
+Files actually modified:
+- package.json
+- App.tsx
+- services/firebaseService.ts
+- services/translationService.ts
+- services/geminiService.ts
+- .env.local
+
+How it was tested:
+- Production build (`npm run build`) passed successfully.
+- Code review of Firebase integration logic.
+
+Test result:
+- PASS
 
 Task ID: T-1004
 Title: Transform README into a high-level application overview

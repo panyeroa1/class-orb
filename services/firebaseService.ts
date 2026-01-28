@@ -3,14 +3,14 @@ import { getDatabase, ref, set, onValue, push, off, get, update, remove } from '
 import { Participant, Message } from '../types';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDVw2Xt1gf52xXgx4E5TMKf2007AyQwBfQ",
-    authDomain: "impactful-ring-469323-e5.firebaseapp.com",
-    databaseURL: "https://impactful-ring-469323-e5-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "impactful-ring-469323-e5",
-    storageBucket: "impactful-ring-469323-e5.firebasestorage.app",
-    messagingSenderId: "316842561818",
-    appId: "1:316842561818:web:7ddaae81a054f0df2c5ca3",
-    measurementId: "G-VELX9N749G"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
