@@ -31,16 +31,18 @@ WORK CHECKLIST
 - [x] Fix syntax errors in `geminiService.ts`.
 - [x] Remove unused `supabase/` directory and `services/supabaseService.ts`.
 - [x] Externalize Firebase configuration to `.env.local`.
+- [x] Configure `functions/` for LiveKit token generation (waiting for keys).
 
 END LOG
 
-Timestamp: 2026-01-28 09:50
+Timestamp: 2026-01-28 10:00
 Summary of what actually changed:
 - Swapped the entire persistence layer from Supabase to Firebase Realtime Database.
 - Simplified synchronization logic in `App.tsx` by using Firebase's more direct `onValue` listeners.
 - Decoupled translation from Supabase by calling the Gemini API directly through `geminiService.translateText`.
 - Verified production build and cleaned up all legacy Supabase files.
 - Moved Firebase configuration from `services/firebaseService.ts` to `.env.local` for better security.
+- Initialized Firebase Functions in `functions/` directory for future backend logic (LiveKit tokens).
 
 Files actually modified:
 - package.json
@@ -49,10 +51,11 @@ Files actually modified:
 - services/translationService.ts
 - services/geminiService.ts
 - .env.local
+- functions/* (new directory)
 
 How it was tested:
 - Production build (`npm run build`) passed successfully.
-- Code review of Firebase integration logic.
+- Verified `geminiService.ts` syntax and SDK usage.
 
 Test result:
 - PASS
