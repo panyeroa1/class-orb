@@ -1,0 +1,8 @@
+{
+  "name": "SuccessInvest Classroom",
+  "description": "An Apple-inspired high-end streaming classroom platform featuring real-time translation, teacher-only streaming, and advanced moderation tools.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

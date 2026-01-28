@@ -1,0 +1,15 @@
+<svg width="400" height="150" viewBox="0 0 400 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon Background (Rounded Square) -->
+  <path d="M40 10H100C116.569 10 130 23.4315 130 40V100C130 122.091 112.091 140 90 140H30C18.9543 140 10 131.046 10 120V50C10 27.9086 27.9086 10 40 10Z" fill="#b22931"/>
+  
+  <!-- Stylized "S" -->
+  <path d="M105 45H45C38 45 36 47 36 53C36 59 38 61 45 61H90C97 61 99 63 99 70C99 77 97 79 90 79H32V68H90C97 68 99 66 99 60C99 54 97 52 90 52H45C38 52 36 50 36 43C36 36 38 34 45 34H105V45Z" fill="white"/>
+  
+  <!-- Typography Group -->
+  <g transform="translate(150, 65)">
+    <!-- "succes" in Brand Charcoal -->
+    <text font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-weight="700" font-size="58" letter-spacing="-0.03em" fill="#262625" x="0" y="0">succes</text>
+    <!-- "invest" in Brand Red -->
+    <text font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-weight="700" font-size="58" letter-spacing="-0.03em" fill="#b22931" x="0" y="55">invest</text>
+  </g>
+</svg>
