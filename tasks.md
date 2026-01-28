@@ -142,11 +142,11 @@ Test result:
 
 ------------------------------------------------------------
 Title: Update Logo to high-quality brand SVG
-Status: IN-PROGRESS
+Status: DONE
 Owner: Miles
 Related repo or service: successinvest-classroom
 Created: 2026-01-28 09:10
-Last updated: 2026-01-28 09:10
+Last updated: 2026-01-28 09:15
 
 START LOG
 
@@ -201,11 +201,11 @@ Known limitations or follow-up tasks:
 
 # Task Log
 Title: Set brand image as teacher video placeholder
-Status: IN-PROGRESS
+Status: DONE
 Owner: Miles
 Related repo or service: successinvest-classroom
 Created: 2026-01-28 08:35
-Last updated: 2026-01-28 08:35
+Last updated: 2026-01-28 08:45
 
 START LOG
 
