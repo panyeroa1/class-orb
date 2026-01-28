@@ -24,7 +24,7 @@ export class GeminiService {
       const contextBlock = context?.trim()
         ? `\n\nConversation context (use for terminology consistency, do not quote verbatim):\n${context.trim()}`
         : '';
-      
+
       const session = await ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-12-2025',
         config: {
@@ -32,12 +32,12 @@ export class GeminiService {
           inputAudioTranscription: {},
           outputAudioTranscription: {},
           speechConfig: {
-            voiceConfig: { 
-              prebuiltVoiceConfig: { 
+            voiceConfig: {
+              prebuiltVoiceConfig: {
                 // Using the requested 'Orus' voice. 
                 // If the backend doesn't support it, the model usually defaults to a standard high-quality one.
-                voiceName: 'Orus' 
-              } 
+                voiceName: 'Orus'
+              }
             },
           },
           systemInstruction: `You are a professional real-time interpreter.
@@ -64,12 +64,12 @@ export class GeminiService {
             } else if (message.serverContent?.outputTranscription) {
               callbacks.onTranscription(message.serverContent.outputTranscription.text, false);
             }
-            
+
             const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (audioData) {
               callbacks.onAudioData(audioData);
             }
-            
+
             if (message.serverContent?.turnComplete) {
               callbacks.onTurnComplete();
             }
@@ -104,6 +104,27 @@ export class GeminiService {
       },
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  }
+
+  async translateText(text: string, sourceLanguage: string, targetLanguage: string, context?: string): Promise<string> {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
+    const contextBlock = context?.trim()
+      ? `\n\nContext:\n${context.trim()}`
+      : "";
+
+    const prompt = `Translate from ${sourceLanguage || "the source language"} to ${targetLanguage}.
+Output ONLY the translation, no extra commentary.${contextBlock}
+
+Text:
+${text}`.trim();
+
+    const result = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    });
+
+    return result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
   }
 }
 

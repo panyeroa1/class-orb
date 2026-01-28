@@ -43,6 +43,7 @@ Summary of what actually changed:
 - Configured Tailwind CSS to use class-based dark mode and synced it with the application's theme state.
 - Audited and updated `JoinScreen`, `TranslationPanel`, `TeacherTile`, and the main `App` control bar to ensure high contrast and theme responsiveness.
 - Introduced semantic CSS variables like `--text-translation` to handle complex coloring across themes.
+- Fixed CSS linting warning in `index.html` regarding `backdrop-filter` property ordering.
 
 Files actually modified:
 - index.html
@@ -53,6 +54,7 @@ Files actually modified:
 
 How it was tested:
 - Visually verified theme toggle functionality and contrast levels.
+- Ran `npm run build` to verify production readiness.
 
 Test result:
 - PASS

@@ -1,4 +1,4 @@
-import { supabase } from './supabaseService';
+import { geminiService } from './geminiService';
 
 export const translateText = async (
   text: string,
@@ -6,21 +6,10 @@ export const translateText = async (
   targetLanguage: string,
   context?: string
 ) => {
-  if (!supabase) {
-    return null;
+  try {
+    return await geminiService.translateText(text, sourceLanguage, targetLanguage, context);
+  } catch (err) {
+    console.error("Translation error:", err);
+    return text; // Fallback to original text
   }
-  const { data, error } = await supabase.functions.invoke('translate', {
-    body: {
-      text,
-      sourceLanguage,
-      targetLanguage,
-      context,
-    },
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return (data?.translation as string | undefined) ?? '';
 };

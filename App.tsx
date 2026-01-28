@@ -11,7 +11,6 @@ import { geminiService } from './services/geminiService';
 import { encode } from './services/audioService';
 import {
   fetchParticipantsForRoom,
-  mapParticipantFromPayload,
   removeParticipant,
   subscribeToParticipants,
   updateParticipant,
@@ -19,7 +18,7 @@ import {
   fetchMessagesForRoom,
   insertMessage,
   subscribeToMessages,
-} from './services/supabaseService';
+} from './services/firebaseService';
 import { translateText } from './services/translationService';
 import { Room, RoomEvent, Track, RemoteTrack } from 'livekit-client';
 
@@ -300,52 +299,29 @@ const App: React.FC = () => {
   }, [user, roomCode]);
 
   const startParticipantsSync = async (roomCodeToSync: string) => {
-    participantsChannelRef.current?.unsubscribe();
+    if (typeof participantsChannelRef.current === 'function') {
+      participantsChannelRef.current();
+    }
     const initialParticipants = await fetchParticipantsForRoom(roomCodeToSync);
     if (initialParticipants.length > 0) {
       setParticipants(initialParticipants);
     }
-    participantsChannelRef.current = subscribeToParticipants(roomCodeToSync, (payload) => {
-      if (payload.eventType === 'DELETE') {
-        setParticipants(prev => prev.filter(p => p.id !== payload.old?.id));
-        return;
-      }
-      if (!payload.new) return;
-      const mapped = mapParticipantFromPayload(payload.new);
-      setParticipants(prev => {
-        const exists = prev.some(p => p.id === mapped.id);
-        if (exists) {
-          return prev.map(p => p.id === mapped.id ? mapped : p);
-        }
-        return [...prev, mapped];
-      });
+    participantsChannelRef.current = subscribeToParticipants(roomCodeToSync, (updatedParticipants) => {
+      setParticipants(updatedParticipants);
     });
   };
 
   const startMessagesSync = async (roomCodeToSync: string) => {
-    messagesChannelRef.current?.unsubscribe();
+    if (typeof messagesChannelRef.current === 'function') {
+      messagesChannelRef.current();
+    }
     const initialMessages = await fetchMessagesForRoom(roomCodeToSync);
-    setMessages(initialMessages.map((m) => ({
-      id: m.id,
-      senderId: m.sender_id,
-      senderName: m.sender_name,
-      originalText: m.original_text,
-      translatedText: undefined,
-      sourceLanguage: m.source_language ?? undefined,
-      timestamp: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
-    })));
-    messagesChannelRef.current = subscribeToMessages(roomCodeToSync, (payload) => {
-      if (!payload.new) return;
-      const mapped: Message = {
-        id: payload.new.id,
-        senderId: payload.new.sender_id,
-        senderName: payload.new.sender_name,
-        originalText: payload.new.original_text,
-        translatedText: undefined,
-        sourceLanguage: payload.new.source_language ?? undefined,
-        timestamp: payload.new.created_at ? new Date(payload.new.created_at).getTime() : Date.now(),
-      };
-      setMessages(prev => prev.some(m => m.id === mapped.id) ? prev : [...prev, mapped]);
+    // Firebase service already handles mapping in the subscription, 
+    // but for initial fetch we might want to ensure consistency if needed.
+    // However, the subscription will fire immediately with onValue.
+
+    messagesChannelRef.current = subscribeToMessages(roomCodeToSync, (updatedMessages) => {
+      setMessages(updatedMessages);
     });
   };
 
