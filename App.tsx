@@ -71,9 +71,9 @@ const App: React.FC = () => {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const [joinNotification, setJoinNotification] = useState<string | null>(null);
   const [isHydrating, setIsHydrating] = useState(true);
-  
+
   // Audio state
-  const [ambientVolume, setAmbientVolume] = useState(0.3); 
+  const [ambientVolume, setAmbientVolume] = useState(0.3);
   const [translationVolume, setTranslationVolume] = useState(1.0);
   const [isTranslationMuted, setIsTranslationMuted] = useState(false);
   const [isMicEnabled, setIsMicEnabled] = useState(true);
@@ -85,7 +85,7 @@ const App: React.FC = () => {
   const sessionPromiseRef = useRef<Promise<any> | null>(null);
   const participantsChannelRef = useRef<ReturnType<typeof subscribeToParticipants> | null>(null);
   const messagesChannelRef = useRef<ReturnType<typeof subscribeToMessages> | null>(null);
-  
+
   // Separate contexts for input and output to ensure clean separation
   const inputAudioCtxRef = useRef<AudioContext | null>(null);
   const outputAudioCtxRef = useRef<AudioContext | null>(null);
@@ -95,13 +95,14 @@ const App: React.FC = () => {
   const audioDecodeWorkerRef = useRef<Worker | null>(null);
   const liveTranscriptRef = useRef<string>('');
   const translationInFlightRef = useRef<Set<string>>(new Set());
-  const translationContextRef = useRef<string>('');
-  const lastContextRefreshRef = useRef<number>(0);
-  const pendingContextRef = useRef<string | null>(null);
-  const contextRefreshTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     document.body.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [theme]);
 
   const initAudioContexts = () => {
@@ -148,6 +149,7 @@ const App: React.FC = () => {
         gender: stored.gender,
       });
       void startParticipantsSync(stored.roomCode);
+      void startMessagesSync(stored.roomCode);
       void upsertParticipant(stored.roomCode, {
         id: stored.id,
         name: stored.name,
@@ -216,20 +218,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const buildConversationContext = (items: Message[], maxItems = 8, maxChars = 1200) => {
-    const finalized = items.filter(m => m.id !== 'live-stream');
-    const recent = finalized.slice(-maxItems);
-    const lines = recent.map((msg) => {
-      const original = msg.originalText?.replace(/\s+/g, ' ').trim() || '';
-      const translated = msg.translatedText?.replace(/\s+/g, ' ').trim() || '';
-      if (!original && !translated) return '';
-      return `${msg.senderName}: ${original}${translated ? ` => ${translated}` : ''}`.trim();
-    }).filter(Boolean);
-    const context = lines.join('\n').trim();
-    if (context.length <= maxChars) return context;
-    return context.slice(context.length - maxChars);
-  };
-
   const buildTranslationContext = (items: Message[], maxItems = 6, maxChars = 800) => {
     const finalized = items.filter(m => m.id !== 'live-stream' && m.translatedText);
     const recent = finalized.slice(-maxItems);
@@ -264,21 +252,22 @@ const App: React.FC = () => {
 
     // Initialize Audio Contexts on user interaction
     initAudioContexts();
-    
+
     const isTeacher = role === UserRole.TEACHER;
-    const meParticipant: Participant = { 
-      id: userId, 
-      name, 
-      role, 
-      language: targetLang, 
-      status: (isTeacher ? UserStatus.SPEAKING : UserStatus.MUTED), 
+    const meParticipant: Participant = {
+      id: userId,
+      name,
+      role,
+      language: targetLang,
+      status: (isTeacher ? UserStatus.SPEAKING : UserStatus.MUTED),
       avatar,
       gender,
     };
-    
+
     setParticipants(prev => [...prev.filter(p => p.id !== userId), meParticipant]);
     await upsertParticipant(resolvedRoomCode, meParticipant);
     await startParticipantsSync(resolvedRoomCode);
+    await startMessagesSync(resolvedRoomCode);
     connectLiveKit(name);
   };
 
@@ -298,9 +287,6 @@ const App: React.FC = () => {
     return () => {
       participantsChannelRef.current?.unsubscribe();
       messagesChannelRef.current?.unsubscribe();
-      if (contextRefreshTimeoutRef.current) {
-        window.clearTimeout(contextRefreshTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -379,67 +365,51 @@ const App: React.FC = () => {
     }
   };
 
-  const createLiveSession = (sourceLang: string, targetLang: string, context?: string) => {
+  const createLiveSession = (sourceLang: string, targetLang: string) => {
     if (!user) return;
     sessionPromiseRef.current = geminiService.connectLive(sourceLang, targetLang, {
       onTranscription: (text, isInput) => {
+        if (!isInput) return;
+        liveTranscriptRef.current = `${liveTranscriptRef.current}${text}`;
         setMessages(prev => {
           const last = prev[prev.length - 1];
           if (last && last.id === 'live-stream') {
-            return prev.map(m => m.id === 'live-stream' ? { 
-              ...m, 
-              originalText: isInput ? (m.originalText + text) : m.originalText,
-              translatedText: !isInput ? ((m.translatedText || '') + text) : m.translatedText 
-            } : m);
+            return prev.map(m => m.id === 'live-stream'
+              ? { ...m, originalText: `${m.originalText}${text}` }
+              : m);
           }
           return [...prev, {
             id: 'live-stream',
             senderId: user.id,
             senderName: user.name,
-            originalText: isInput ? text : '',
-            translatedText: !isInput ? text : '',
+            originalText: text,
+            translatedText: '',
             timestamp: Date.now()
           }];
         });
       },
-      onAudioData: (base64) => playAudioChunk(base64),
+      onAudioData: () => { },
       onTurnComplete: () => {
-        setMessages(prev => {
-          const updated = prev.map(m => m.id === 'live-stream' ? { ...m, id: `final-${Date.now()}` } : m);
-          const newContext = buildConversationContext(updated);
-          if (newContext && newContext !== translationContextRef.current) {
-            translationContextRef.current = newContext;
-            if (isBroadcasting && user) {
-              const now = Date.now();
-              const cooldownMs = 12000;
-              const elapsed = now - lastContextRefreshRef.current;
-              if (elapsed >= cooldownMs) {
-                lastContextRefreshRef.current = now;
-                void restartLiveSession(user.sourceLang, user.targetLang, newContext);
-              } else {
-                pendingContextRef.current = newContext;
-                if (!contextRefreshTimeoutRef.current) {
-                  contextRefreshTimeoutRef.current = window.setTimeout(() => {
-                    contextRefreshTimeoutRef.current = null;
-                    const pending = pendingContextRef.current;
-                    pendingContextRef.current = null;
-                    if (pending && user && isBroadcasting) {
-                      lastContextRefreshRef.current = Date.now();
-                      void restartLiveSession(user.sourceLang, user.targetLang, pending);
-                    }
-                  }, cooldownMs - elapsed);
-                }
-              }
-            }
-          }
-          return updated;
-        });
+        const finalText = liveTranscriptRef.current.trim();
+        liveTranscriptRef.current = '';
+        setMessages(prev => prev.filter(m => m.id !== 'live-stream'));
+        if (finalText && user) {
+          void insertMessage(roomCode, {
+            id: crypto.randomUUID(),
+            room_code: roomCode,
+            sender_id: user.id,
+            sender_name: user.name,
+            original_text: finalText,
+            source_language: user.sourceLang,
+            created_at: new Date().toISOString(),
+          });
+        }
       },
       onError: (err) => {
         console.error("Gemini Session error:", err);
         stopBroadcast();
       }
-    }, context);
+    });
   };
 
   const closeLiveSession = async () => {
@@ -452,14 +422,9 @@ const App: React.FC = () => {
     }
   };
 
-  const restartLiveSession = async (sourceLang: string, targetLang: string, context?: string) => {
-    if (contextRefreshTimeoutRef.current) {
-      window.clearTimeout(contextRefreshTimeoutRef.current);
-      contextRefreshTimeoutRef.current = null;
-    }
-    pendingContextRef.current = null;
+  const restartLiveSession = async (sourceLang: string, targetLang: string) => {
     await closeLiveSession();
-    createLiveSession(sourceLang, targetLang, context);
+    createLiveSession(sourceLang, targetLang);
   };
 
   const startBroadcast = async () => {
@@ -468,18 +433,18 @@ const App: React.FC = () => {
     if (!inputAudioCtxRef.current || !outputAudioCtxRef.current) return;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: true, 
-        video: user.role === UserRole.TEACHER ? { width: 1280, height: 720, frameRate: 24 } : false 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: user.role === UserRole.TEACHER ? { width: 1280, height: 720, frameRate: 24 } : false
       });
       setLocalStream(stream);
 
       // Connect Gemini with dual language context
-      createLiveSession(user.sourceLang, user.targetLang, translationContextRef.current);
+      createLiveSession(user.sourceLang, user.targetLang);
 
       const source = inputAudioCtxRef.current.createMediaStreamSource(stream);
       const processor = inputAudioCtxRef.current.createScriptProcessor(4096, 1, 1);
-      
+
       processor.onaudioprocess = (e) => {
         if (!isMicEnabled) return;
 
@@ -487,14 +452,14 @@ const App: React.FC = () => {
         const l = inputData.length;
         const int16 = new Int16Array(l);
         for (let i = 0; i < l; i++) int16[i] = inputData[i] * 32768;
-        
+
         sessionPromiseRef.current?.then((activeSession) => {
           if (activeSession) {
-            activeSession.sendRealtimeInput({ 
-              media: { 
-                data: encode(new Uint8Array(int16.buffer)), 
-                mimeType: 'audio/pcm;rate=16000' 
-              } 
+            activeSession.sendRealtimeInput({
+              media: {
+                data: encode(new Uint8Array(int16.buffer)),
+                mimeType: 'audio/pcm;rate=16000'
+              }
             });
           }
         });
@@ -520,11 +485,6 @@ const App: React.FC = () => {
   const stopBroadcast = () => {
     void closeLiveSession();
     sessionPromiseRef.current = null;
-    if (contextRefreshTimeoutRef.current) {
-      window.clearTimeout(contextRefreshTimeoutRef.current);
-      contextRefreshTimeoutRef.current = null;
-    }
-    pendingContextRef.current = null;
     if (localStream) {
       localStream.getTracks().forEach(t => t.stop());
       setLocalStream(null);
@@ -549,7 +509,7 @@ const App: React.FC = () => {
     setUser({ ...user, sourceLang: language });
     persistUserProfile({ sourceLang: language });
     if (isBroadcasting) {
-      void restartLiveSession(language, user.targetLang, translationContextRef.current);
+      void restartLiveSession(language, user.targetLang);
     }
   };
 
@@ -560,9 +520,44 @@ const App: React.FC = () => {
     setParticipants(prev => prev.map(p => p.id === user.id ? { ...p, language } : p));
     void updateParticipant(roomCode, user.id, { language });
     if (isBroadcasting) {
-      void restartLiveSession(user.sourceLang, language, translationContextRef.current);
+      void restartLiveSession(user.sourceLang, language);
     }
   };
+
+  const translateMessage = async (message: Message) => {
+    if (!user || !message.originalText || message.id === 'live-stream') return;
+    if (translationInFlightRef.current.has(message.id)) return;
+    translationInFlightRef.current.add(message.id);
+    try {
+      const context = buildTranslationContext(messages.filter(m => m.id !== message.id));
+      const translated = await translateText(
+        message.originalText,
+        message.sourceLanguage ?? user.sourceLang,
+        user.targetLang,
+        context
+      );
+      const finalTranslation = translated && translated.trim().length > 0 ? translated : message.originalText;
+      setMessages(prev => prev.map(m => m.id === message.id ? { ...m, translatedText: finalTranslation } : m));
+    } catch (error) {
+      console.error('Translation failed', error);
+    } finally {
+      translationInFlightRef.current.delete(message.id);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    translationInFlightRef.current.clear();
+    setMessages(prev => prev.map(m => m.id === 'live-stream' ? m : { ...m, translatedText: undefined }));
+  }, [user?.targetLang]);
+
+  useEffect(() => {
+    if (!user) return;
+    const pending = messages.filter(m => m.id !== 'live-stream' && !m.translatedText);
+    pending.forEach((message) => {
+      void translateMessage(message);
+    });
+  }, [messages, user?.targetLang]);
 
   const handleToggleTranslationMute = () => {
     setIsTranslationMuted(prev => !prev);
@@ -596,9 +591,9 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden antialiased bg-[var(--bg-app)]">
-      <Header 
+      <Header
         roomName="Wealth Management Mastery"
-        onSettingsClick={() => {}}
+        onSettingsClick={() => { }}
         onExit={handleExit}
         onThemeToggle={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
         currentTheme={theme}
@@ -632,7 +627,7 @@ const App: React.FC = () => {
           {!isSidebarCollapsed && (
             <>
               <div className="p-4">
-                <TeacherTile 
+                <TeacherTile
                   name={participants.find(p => p.role === UserRole.TEACHER)?.name || 'Instructor'}
                   avatar={`https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher`}
                   isLive={isBroadcasting || (!!remoteStream && user.role === UserRole.STUDENT)}
@@ -646,20 +641,20 @@ const App: React.FC = () => {
                   isContinuousTalk={isContinuousTalk}
                   onToggleMic={() => setIsMicEnabled(!isMicEnabled)}
                   onToggleVideo={() => setIsVideoEnabled(!isVideoEnabled)}
-                  onMuteAll={() => {}}
+                  onMuteAll={() => { }}
                   onToggleContinuous={() => setIsContinuousTalk(!isContinuousTalk)}
                   onPTTStart={() => updateMyStatus(UserStatus.SPEAKING)}
                   onPTTEnd={() => updateMyStatus(UserStatus.MUTED)}
                   isSidebarView
                 />
               </div>
-              <StudentList 
+              <StudentList
                 participants={participants}
                 currentUserRole={user.role}
                 currentUserId={user.id}
-                onAcceptHand={() => {}}
-                onRejectHand={() => {}}
-                onMute={() => {}}
+                onAcceptHand={() => { }}
+                onRejectHand={() => { }}
+                onMute={() => { }}
               />
               <div className="border-t border-[var(--glass-border)] bg-black/5 dark:bg-white/5 p-3 shrink-0">
                 <div className="flex items-center justify-between mb-2">
@@ -680,8 +675,8 @@ const App: React.FC = () => {
 
         {/* Center: Dual Persistent Transcription/Translation Panels */}
         <section className="flex-1 flex flex-col relative min-w-0">
-          <TranslationPanel 
-            messages={messages} 
+          <TranslationPanel
+            messages={messages}
             sourceLanguage={user.sourceLang}
             targetLanguage={user.targetLang}
             onReplay={handleReplay}
@@ -690,25 +685,25 @@ const App: React.FC = () => {
           />
 
           {/* Bottom Control Bar */}
-          <div className="h-24 border-t border-[var(--glass-border)] flex flex-wrap items-center justify-between px-6 bg-black/5 backdrop-blur-xl shrink-0 gap-4 overflow-hidden">
+          <div className="h-24 border-t border-[var(--glass-border)] flex flex-wrap items-center justify-between px-6 apple-glass shrink-0 gap-4 overflow-hidden shadow-sm transition-colors duration-500">
             <div className="flex items-center gap-6">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest opacity-40">Ambient Mix</label>
-                <input 
-                  type="range" 
-                  min="0" max="1" step="0.01" 
-                  value={ambientVolume} 
-                  onChange={(e) => setAmbientVolume(parseFloat(e.target.value))} 
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--text-secondary)]">Ambient Mix</label>
+                <input
+                  type="range"
+                  min="0" max="1" step="0.01"
+                  value={ambientVolume}
+                  onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
                   className="w-24 accent-[var(--accent-red)] h-1 cursor-pointer"
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--accent-red)] opacity-80">Translation Output</label>
-                <input 
-                  type="range" 
-                  min="0" max="1" step="0.01" 
-                  value={translationVolume} 
-                  onChange={(e) => setTranslationVolume(parseFloat(e.target.value))} 
+                <label className="text-[9px] font-black uppercase tracking-widest text-[var(--accent-red)]">Translation Output</label>
+                <input
+                  type="range"
+                  min="0" max="1" step="0.01"
+                  value={translationVolume}
+                  onChange={(e) => setTranslationVolume(parseFloat(e.target.value))}
                   className="w-24 accent-[var(--accent-red)] h-1 cursor-pointer"
                 />
               </div>
@@ -716,7 +711,7 @@ const App: React.FC = () => {
 
             <div className="flex items-center gap-3 flex-1 lg:flex-none justify-end">
               {user.role === UserRole.STUDENT && (
-                <button 
+                <button
                   onClick={() => updateMyStatus(UserStatus.HAND_RAISED)}
                   className="px-5 h-11 rounded border border-[var(--glass-border)] text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2"
                 >
@@ -726,7 +721,7 @@ const App: React.FC = () => {
               )}
 
               {user.role === UserRole.TEACHER && (
-                <button 
+                <button
                   onClick={() => isBroadcasting ? stopBroadcast() : startBroadcast()}
                   className={`px-10 h-14 text-[13px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${isBroadcasting ? 'brand-red text-white shadow-lg animate-pulse-soft' : 'bg-black/10 dark:bg-white/10 hover:bg-black/20'}`}
                 >

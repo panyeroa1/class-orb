@@ -6,16 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuccessInvest Classroom</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class'
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-app: #f5f5f7;
-            --bg-mesh: radial-gradient(at 0% 0%, rgba(178, 41, 49, 0.05) 0px, transparent 50%),
-                       radial-gradient(at 100% 0%, rgba(38, 38, 37, 0.02) 0px, transparent 50%);
-            --glass-bg: rgba(255, 255, 255, 0.7);
-            --glass-border: rgba(0, 0, 0, 0.08);
-            --text-primary: #1d1d1f;
-            --text-secondary: #86868b;
+            --bg-app: #ffffff;
+            --bg-mesh: radial-gradient(at 0% 0%, rgba(178, 41, 49, 0.08) 0px, transparent 50%),
+                       radial-gradient(at 100% 0%, rgba(0, 0, 0, 0.03) 0px, transparent 50%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #000000;
+            --text-secondary: #3c3c43;
+            --text-translation: #0a7a0a;
             --accent-red: #b22931;
             --brand-charcoal: #262625;
             --radius-lg: 6px;
@@ -28,8 +34,9 @@
                        radial-gradient(at 100% 100%, rgba(38, 38, 37, 0.3) 0px, transparent 50%);
             --glass-bg: rgba(28, 28, 30, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
-            --text-primary: #f5f5f7;
-            --text-secondary: #a1a1a6;
+            --text-primary: #ffffff;
+            --text-secondary: #86868b;
+            --text-translation: #a3e635;
             --accent-red: #d02e38;
         }
 

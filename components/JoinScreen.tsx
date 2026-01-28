@@ -39,9 +39,9 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <label className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Identity</label>
-          <input 
-            type="text" 
+          <label className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Identity</label>
+          <input
+            type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -51,9 +51,9 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Room Key</label>
-          <input 
-            type="text" 
+          <label className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Room Key</label>
+          <input
+            type="text"
             required
             value={roomCode}
             onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
@@ -64,7 +64,7 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
 
         <div className="grid grid-cols-1 gap-5">
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Class Role</label>
+            <label className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Class Role</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -86,8 +86,8 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label htmlFor="join-source-language" className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Speaking</label>
-            <select 
+            <label htmlFor="join-source-language" className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Speaking</label>
+            <select
               id="join-source-language"
               value={sourceLanguage}
               onChange={(e) => setSourceLanguage(e.target.value)}
@@ -99,8 +99,8 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
             </select>
           </div>
           <div className="space-y-2">
-            <label htmlFor="join-target-language" className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Translate To</label>
-            <select 
+            <label htmlFor="join-target-language" className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Translate To</label>
+            <select
               id="join-target-language"
               value={targetLanguage}
               onChange={(e) => setTargetLanguage(e.target.value)}
@@ -114,7 +114,7 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="join-gender" className="text-[11px] font-bold uppercase opacity-30 tracking-[0.1em]">Gender</label>
+          <label htmlFor="join-gender" className="text-[11px] font-bold uppercase text-[var(--text-secondary)] tracking-[0.1em]">Gender</label>
           <select
             id="join-gender"
             value={gender}
@@ -130,7 +130,7 @@ const JoinScreen: React.FC<JoinScreenProps> = ({ onJoin }) => {
         </div>
 
         <div className="pt-4">
-          <button 
+          <button
             type="submit"
             className="w-full h-14 brand-red text-white text-[14px] font-black uppercase tracking-[0.2em] hover:brightness-110 active:scale-[0.98] transition-all shadow-xl"
           >

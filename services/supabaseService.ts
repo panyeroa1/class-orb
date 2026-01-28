@@ -119,6 +119,7 @@ export const fetchMessagesForRoom = async (roomCode: string) => {
 export const insertMessage = async (roomCode: string, message: MessageRow) => {
   if (!supabase) return;
   await supabase.from('messages').insert({
+    id: message.id,
     room_code: roomCode,
     sender_id: message.sender_id,
     sender_name: message.sender_name,

@@ -136,11 +136,11 @@ const TeacherTile: React.FC<TeacherTileProps> = ({
         )}
       </div>
 
-      <div className="p-4 bg-[#262625] text-white">
+      <div className="p-4 bg-[var(--glass-bg)] backdrop-blur-xl text-[var(--text-primary)] border-t border-[var(--glass-border)] transition-colors duration-500">
         <div className="flex justify-between items-start mb-2">
           <div className="flex flex-col">
             <span className="text-[13px] font-black block truncate tracking-tight uppercase leading-tight">{name}</span>
-            <span className="text-[10px] text-white/40 uppercase tracking-widest font-black mt-1">Lead Instructor</span>
+            <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-widest font-black mt-1">Lead Instructor</span>
           </div>
           {isHost && (
             <div className="flex flex-col items-end">
@@ -163,7 +163,7 @@ const TeacherTile: React.FC<TeacherTileProps> = ({
               {shareLink && (
                 <button
                   onClick={copyShareLink}
-                  className={`mt-2 flex items-center gap-2 px-2 py-1 rounded border transition-all ${linkCopied ? 'bg-green-500 border-green-500 text-white' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
+                  className={`mt-2 flex items-center gap-2 px-2 py-1 rounded border transition-all ${linkCopied ? 'bg-green-500 border-green-500 text-white' : 'border-[var(--glass-border)] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10'}`}
                   aria-label="Copy student share link"
                   title="Copy student share link"
                 >

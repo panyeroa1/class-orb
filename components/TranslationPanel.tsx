@@ -37,8 +37,8 @@ const stripSourcePrefix = (translation: string, source: string) => {
   return translationTrimmed;
 };
 
-const TranslationPanel: React.FC<TranslationPanelProps> = ({ 
-  messages, 
+const TranslationPanel: React.FC<TranslationPanelProps> = ({
+  messages,
   sourceLanguage,
   targetLanguage,
   onReplay,
@@ -60,7 +60,7 @@ const TranslationPanel: React.FC<TranslationPanelProps> = ({
     });
   }, [messages]);
 
-  const displayMessages = showHistory 
+  const displayMessages = showHistory
     ? messages.filter(m => m.id !== 'live-stream')
     : messages;
 
@@ -85,7 +85,7 @@ const TranslationPanel: React.FC<TranslationPanelProps> = ({
         <div ref={transcriptRef} className="flex-1 overflow-y-auto p-6 space-y-6">
           {displayMessages.map((msg) => (
             <div key={`${msg.id}-src`} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-               <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-[var(--accent-red)] opacity-50">{msg.senderName}</span>
                 <span className="text-[8px] opacity-20 font-mono">{new Date(msg.timestamp).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}</span>
               </div>
@@ -126,11 +126,14 @@ const TranslationPanel: React.FC<TranslationPanelProps> = ({
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[9px] font-black uppercase tracking-widest text-[var(--text-secondary)] opacity-30">{msg.senderName}</span>
                 </div>
-                <p className="text-[15px] leading-relaxed text-lime-400 font-bold tracking-tight">
+                <p
+                  className="text-[15px] leading-relaxed font-bold tracking-tight"
+                  style={{ color: 'var(--text-translation)' }}
+                >
                   {translationText || (msg.id === 'live-stream' ? '...' : '')}
                 </p>
                 {translationText && (
-                  <button 
+                  <button
                     onClick={() => onReplay?.(translationText)}
                     type="button"
                     className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 p-2 text-[var(--accent-red)] transition-all"
@@ -146,7 +149,7 @@ const TranslationPanel: React.FC<TranslationPanelProps> = ({
               </div>
             );
           })}
-           {displayMessages.length === 0 && (
+          {displayMessages.length === 0 && (
             <div className="h-full flex items-center justify-center opacity-10">
               <span className="text-[10px] uppercase font-black tracking-widest">Waiting for Input</span>
             </div>

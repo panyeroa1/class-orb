@@ -7,7 +7,7 @@ export const translateText = async (
   context?: string
 ) => {
   if (!supabase) {
-    return '';
+    return null;
   }
   const { data, error } = await supabase.functions.invoke('translate', {
     body: {
